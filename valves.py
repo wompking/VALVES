@@ -2,6 +2,35 @@ import sys
 import re
 import math
 
+def cap(color):
+	r,g,b = color
+	r = 0 if r < 0 else r
+	g = 0 if g < 0 else g
+	b = 0 if b < 0 else b
+	r = 255 if r > 255 else r
+	g = 255 if g > 255 else g
+	b = 255 if b > 255 else b
+	return (r,g,b)
+def generateEscape(color,back=False):
+	r,g,b = cap(color)
+	return "\033["+str(48 if back else 38)+";2;{0};{1};{2}m".format(r,g,b)
+def color(s,front=None,back=None):
+	if front == None and back == None:
+		return str(s)+"\u001b[0m"
+	elif front == None:
+		return generateEscape(back,True)+str(s)+"\u001b[0m"
+	elif back == None:
+		return generateEscape(front)+str(s)+"\u001b[0m"
+	else:
+		return generateEscape(back,True)+generateEscape(front)+str(s)+"\u001b[0m"
+def lerp(A,B,num=0.5):
+	rA, gA, bA = A
+	rB, gB, bB = A
+	rM = rA * (1-num) + rB * (num)
+	gM = gA * (1-num) + gB * (num)
+	bM = bA * (1-num) + bB * (num)
+	return (rM, gM, bM)
+
 RPOS = [(0,-1),(1,0),(0,1),(-1,0)]
 
 if len(sys.argv) < 2:
@@ -183,5 +212,41 @@ def step():
 							input("")
 	pressure = pressurenew
 
+def colorpressure(s,p,l,m,h,back=False):
+	if p < 0:
+		scale = -p/256
+		if back:
+			return color(s, back=lerp(m,l,scale))
+		else:
+			return color(s, front=lerp(m,l,scale))
+	elif p > 0:
+		scale = p/256
+		if back:
+			return color(s, back=lerp(m,h,scale))
+		else:
+			return color(s, front=lerp(m,h,scale))
+	else:
+		return s
+
+def render():
+	out = "\x1b[2J"
+	RED = (255,0,0)
+	BLU = (0,128,255)
+	BCK = (0,0,0)
+	WHT = (255,255,255)
+	measurements = ""
+	c = 0
+	for y in range(height):
+		for x in range(width):
+			getpr = get(pressure,x,y)
+			cell = get(grid,x,y)
+			out += colorpressure(cell,getpr,BLU,BCK,RED,back=True)
+			if cell == "M":
+				measurements += "M"+str(c)+": "+colorpressure(str(getpr),getpr,BLU,WHT,RED)+"\n"
+				c += 1
+		out += "\n"
+	return out+measurements
 while True:
+	if debugging:
+		print(render())
 	step()
