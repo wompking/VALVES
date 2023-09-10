@@ -38,7 +38,7 @@ if len(sys.argv) < 2:
 	sys.exit(-1)
 
 debugging = len(sys.argv) > 2
-program = open(sys.argv[1]).read()
+program = open(sys.argv[1], "r", encoding="utf-8").read()
 
 def get(l,x,y):
 	#print("\t\t",(x,y),(x%width,y%height))
